@@ -17,6 +17,7 @@ class RemoteInterface {
   constructor() {
     this.clients = []
     this.launchServer()
+    this.playerCount = 0;
   }
 
   launchServer() {
@@ -57,6 +58,16 @@ class RemoteInterface {
     // process.stdout.write('\x07')
     client.setEncoding('utf8')
     this.clients.push(client)
+
+    // Increase player count:
+    this.playerCount++
+    // Notify other players when a new player joins:
+    for (let player of this.clients) {
+      if (player !== client) {
+        player.write(`New player joined! There are now ${this.playerCount} players!`)
+      }
+    }
+
     this.resetIdleTimer(client, MAX_IDLE_TIMEOUT / 2)
 
     if (this.newClientHandler) this.newClientHandler(client)
@@ -72,6 +83,15 @@ class RemoteInterface {
   }
 
   handleClientEnded(client) {
+    // Decrease player count:
+    this.playerCount--
+    // Notify other players when a player disconnects:
+    for (let player of this.clients) {
+      if (player !== client) {
+        player.write(`Player has disconnected! There are now ${this.playerCount} players!`)
+      }
+    }
+
     if (client.idleTimer) clearTimeout(client.idleTimer)
     if (this.clientEndHandler) this.clientEndHandler(client)
   }
